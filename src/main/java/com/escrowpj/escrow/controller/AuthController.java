@@ -7,6 +7,7 @@ import com.escrowpj.escrow.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.*;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -44,39 +45,48 @@ public class AuthController {
 
     //  LOGIN (FIXED FOR FRONTEND)
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<LoginResponse>> login(
+    public ResponseEntity<ApiResponse<?>> login(
             @RequestBody AuthRequest request
     ) {
 
-        // 1️ Authenticate
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.getEmail(),
-                        request.getPassword()
-                )
-        );
+        try {
 
-        // 2️ Get user
-        User user = userService.getByEmail(request.getEmail());
+            // 1️ Authenticate
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            request.getEmail(),
+                            request.getPassword()
+                    )
+            );
 
-        // 3️ Generate token
-        String token = jwtUtil.generateToken(
-                user.getEmail(),
-                user.getRole().name()
-        );
+            // 2️ Get user
+            User user = userService.getByEmail(request.getEmail());
 
-        // 4️ Build response data
-        LoginResponse loginResponse = new LoginResponse(
-                user.getId(),
-                user.getName(),
-                user.getEmail(),
-                user.getRole().name(), // REQUIRED BY FRONTEND
-                token
-        );
+            // 3️ Generate token
+            String token = jwtUtil.generateToken(
+                    user.getEmail(),
+                    user.getRole().name()
+            );
 
-        // 5️ Final API response
-        return ResponseEntity.ok(
-                new ApiResponse<>(true, loginResponse)
-        );
+            // 4️ Build response data
+            LoginResponse loginResponse = new LoginResponse(
+                    user.getId(),
+                    user.getName(),
+                    user.getEmail(),
+                    user.getRole().name(),
+                    token
+            );
+
+            return ResponseEntity.ok(
+                    new ApiResponse<>(true, loginResponse)
+            );
+
+        } catch (BadCredentialsException | UsernameNotFoundException e) {
+
+            return ResponseEntity.status(401).body(
+                    new ApiResponse<>(false, "Invalid email or password")
+            );
+        }
     }
+
 }
