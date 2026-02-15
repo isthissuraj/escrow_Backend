@@ -23,6 +23,7 @@ public class User {
 
     private String password;
 
+
     // CLIENT, FREELANCER, ADMIN
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
