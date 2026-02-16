@@ -17,6 +17,7 @@ public class UserController {
 
     private final UserService userService;
 
+    //profile
     @GetMapping("/profile")
     public ResponseEntity<ApiResponse<ProfileResponse>> getProfile(Principal principal) {
 
