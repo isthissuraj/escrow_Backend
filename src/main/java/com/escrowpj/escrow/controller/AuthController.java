@@ -2,6 +2,7 @@ package com.escrowpj.escrow.controller;
 
 import com.escrowpj.escrow.dto.*;
 import com.escrowpj.escrow.entity.User;
+import com.escrowpj.escrow.repository.UserRepository;
 import com.escrowpj.escrow.security.JwtUtil;
 import com.escrowpj.escrow.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -20,38 +21,55 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
     private final UserService userService;
-
+    private final UserRepository userRepository;
     //  REGISTER
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody User user) {
 
-        User savedUser = userService.register(user);
+        try {
 
-        RegisterResponse registerResponse = new RegisterResponse(
-                savedUser.getId(),
-                savedUser.getName(),
-                savedUser.getEmail(),
-                savedUser.getRole().name()
-        );
+            User savedUser = userService.register(user);
 
-        HashMap<String, Object> response = new HashMap<>();
-        response.put("success", true);
-        response.put("message", "User registered successfully");
-        response.put("data", registerResponse);
+            RegisterResponse registerResponse = new RegisterResponse(
+                    savedUser.getId(),
+                    savedUser.getName(),
+                    savedUser.getEmail(),
+                    savedUser.getRole().name()
+            );
 
-        return ResponseEntity.ok(response);
+            HashMap<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "User registered successfully");
+            response.put("data", registerResponse);
+
+            return ResponseEntity.ok(response);
+
+        } catch (RuntimeException e) {
+
+            return ResponseEntity.status(400).body(
+                    new ApiResponse<>(false, e.getMessage())
+            );
+        }
     }
 
-
-    //  LOGIN (FIXED FOR FRONTEND)
+    // LOGIN
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<?>> login(
             @RequestBody AuthRequest request
     ) {
 
+        // 1️ Check if email exists first
+        User user = userRepository.findByEmail(request.getEmail()).orElse(null);
+
+        if (user == null) {
+            return ResponseEntity.status(404).body(
+                    new ApiResponse<>(false, "Email is not registered")
+            );
+        }
+
         try {
 
-            // 1️ Authenticate
+            // 2️ Authenticate password
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             request.getEmail(),
@@ -59,16 +77,12 @@ public class AuthController {
                     )
             );
 
-            // 2️ Get user
-            User user = userService.getByEmail(request.getEmail());
-
             // 3️ Generate token
             String token = jwtUtil.generateToken(
                     user.getEmail(),
                     user.getRole().name()
             );
 
-            // 4️ Build response data
             LoginResponse loginResponse = new LoginResponse(
                     user.getId(),
                     user.getName(),
@@ -81,10 +95,10 @@ public class AuthController {
                     new ApiResponse<>(true, loginResponse)
             );
 
-        } catch (BadCredentialsException | UsernameNotFoundException e) {
+        } catch (BadCredentialsException e) {
 
             return ResponseEntity.status(401).body(
-                    new ApiResponse<>(false, "Invalid email or password")
+                    new ApiResponse<>(false, "Incorrect password")
             );
         }
     }
