@@ -16,12 +16,19 @@ public class EscrowTransaction {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long projectId;
+    @ManyToOne
+    @JoinColumn(name = "project_id", nullable = false)
+    private Project project;
 
-    // DEPOSIT, RELEASE, REFUND
-    private String type;
+    @Enumerated(EnumType.STRING)
+    private TransactionType type;
 
     private Double amount;
 
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private LocalDateTime createdAt;
+
+    @PrePersist
+    public void setCreatedAt() {
+        this.createdAt = LocalDateTime.now();
+    }
 }

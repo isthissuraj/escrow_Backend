@@ -3,6 +3,10 @@ package com.escrowpj.escrow.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+
 @Entity
 @Getter
 @Setter
@@ -14,12 +18,17 @@ public class ProjectPhase {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long projectId;
-
-    private String title;
-
+    private String name;
     private Double amount;
 
-    // PENDING, SUBMITTED, APPROVED, REJECTED
-    private String status;
+    private LocalDate dueDate;
+
+    @Enumerated(EnumType.STRING)
+    private PhaseStatus status;
+
+    @ManyToOne
+    @JoinColumn(name = "project_id", nullable = false)
+    @JsonIgnore
+    private Project project;
+
 }

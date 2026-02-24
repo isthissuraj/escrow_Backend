@@ -3,6 +3,9 @@ package com.escrowpj.escrow.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
+import java.util.List;
+
 @Entity
 @Getter
 @Setter
@@ -15,13 +18,22 @@ public class Project {
     private Long id;
 
     private String title;
-
     private String description;
+    private String category;
+    private Double budget;
+    private LocalDate deadline;
 
-    private Long clientId;
+    @ManyToOne
+    @JoinColumn(name = "client_id", nullable = false)
+    private User client;
 
-    private Long freelancerId;
+    @ManyToOne
+    @JoinColumn(name = "freelancer_id")
+    private User freelancer;
 
-    // CREATED, IN_PROGRESS, COMPLETED
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private ProjectStatus status;
+
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL)
+    private List<ProjectPhase> milestones;
 }
