@@ -3,7 +3,7 @@ package com.escrowpj.escrow.security;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.authentication.*;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -25,34 +25,53 @@ public class JwtFilter extends OncePerRequestFilter {
                                     FilterChain chain)
             throws ServletException, IOException {
 
-        String authHeader = request.getHeader("Authorization");
+        String path = request.getServletPath();
 
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+        // Skip authentication endpoints
+        if (path.startsWith("/auth")) {
+            chain.doFilter(request, response);
+            return;
+        }
 
-            String token = authHeader.substring(7);
-            String email = jwtUtil.extractEmail(token);
+        try {
 
-            if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            String authHeader = request.getHeader("Authorization");
 
-                UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
 
-                if (jwtUtil.isTokenValid(token)) {
+                String token = authHeader.substring(7);
+                String email = jwtUtil.extractEmail(token);
 
-                    UsernamePasswordAuthenticationToken authToken =
-                            new UsernamePasswordAuthenticationToken(
-                                    userDetails,
-                                    null,
-                                    userDetails.getAuthorities()
-                            );
+                if (email != null &&
+                        SecurityContextHolder.getContext().getAuthentication() == null) {
 
-                    authToken.setDetails(
-                            new WebAuthenticationDetailsSource().buildDetails(request)
-                    );
+                    UserDetails userDetails =
+                            userDetailsService.loadUserByUsername(email);
 
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                    if (jwtUtil.isTokenValid(token)) {
+
+                        UsernamePasswordAuthenticationToken authToken =
+                                new UsernamePasswordAuthenticationToken(
+                                        userDetails,
+                                        null,
+                                        userDetails.getAuthorities()
+                                );
+
+                        authToken.setDetails(
+                                new WebAuthenticationDetailsSource()
+                                        .buildDetails(request)
+                        );
+
+                        SecurityContextHolder.getContext()
+                                .setAuthentication(authToken);
+                    }
                 }
             }
+
+        } catch (Exception e) {
+            SecurityContextHolder.clearContext();
         }
+
         chain.doFilter(request, response);
     }
 }
