@@ -1,5 +1,6 @@
 package com.escrowpj.escrow.service;
 
+import com.escrowpj.escrow.dto.RegisterRequest;
 import com.escrowpj.escrow.entity.Role;
 import com.escrowpj.escrow.entity.User;
 import com.escrowpj.escrow.repository.UserRepository;
@@ -14,30 +15,39 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public User register(User user) {
+    // REGISTER
+    public User register(RegisterRequest request) {
 
-        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
+        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new RuntimeException("Email already exists");
         }
 
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        // Convert DTO → Entity
+        User user = new User();
+        user.setName(request.getName());
+        user.setEmail(request.getEmail());
 
-        // default role
-        if (user.getRole() == null) {
-            user.setRole(Role.CLIENT);
-        }
+        // CRITICAL: Hash password
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+
+        // Default role
+        user.setRole(
+                request.getRole() != null
+                        ? request.getRole()
+                        : Role.CLIENT
+        );
 
         return userRepository.save(user);
     }
 
+    //  GET BY EMAIL
     public User getByEmail(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
+    // GET PROFILE
     public User getProfile(String email) {
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        return getByEmail(email);
     }
-
 }

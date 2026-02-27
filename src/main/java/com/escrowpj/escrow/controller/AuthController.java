@@ -2,16 +2,14 @@ package com.escrowpj.escrow.controller;
 
 import com.escrowpj.escrow.dto.*;
 import com.escrowpj.escrow.entity.User;
-import com.escrowpj.escrow.repository.UserRepository;
 import com.escrowpj.escrow.security.JwtUtil;
 import com.escrowpj.escrow.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.HashMap;
 
 @RestController
 @RequestMapping("/auth")
@@ -21,55 +19,32 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
     private final UserService userService;
-    private final UserRepository userRepository;
-    //  REGISTER
+    private final PasswordEncoder passwordEncoder;
+
+    // REGISTER
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody User user) {
+    public ResponseEntity<ApiResponse<?>> register(@RequestBody RegisterRequest request) {
 
-        try {
+        User savedUser = userService.register(request);
 
-            User savedUser = userService.register(user);
+        RegisterResponse response = new RegisterResponse(
+                savedUser.getId(),
+                savedUser.getName(),
+                savedUser.getEmail(),
+                savedUser.getRole().name()
+        );
 
-            RegisterResponse registerResponse = new RegisterResponse(
-                    savedUser.getId(),
-                    savedUser.getName(),
-                    savedUser.getEmail(),
-                    savedUser.getRole().name()
-            );
-
-            HashMap<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("message", "User registered successfully");
-            response.put("data", registerResponse);
-
-            return ResponseEntity.ok(response);
-
-        } catch (RuntimeException e) {
-
-            return ResponseEntity.status(400).body(
-                    new ApiResponse<>(false, e.getMessage())
-            );
-        }
+        return ResponseEntity.ok(
+                new ApiResponse<>(true, response)
+        );
     }
 
     // LOGIN
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<?>> login(
-            @RequestBody AuthRequest request
-    ) {
-
-        // 1️ Check if email exists first
-        User user = userRepository.findByEmail(request.getEmail()).orElse(null);
-
-        if (user == null) {
-            return ResponseEntity.status(404).body(
-                    new ApiResponse<>(false, "Email is not registered")
-            );
-        }
+    public ResponseEntity<ApiResponse<?>> login(@RequestBody AuthRequest request) {
 
         try {
 
-            // 2️ Authenticate password
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             request.getEmail(),
@@ -77,7 +52,8 @@ public class AuthController {
                     )
             );
 
-            // 3️ Generate token
+            User user = userService.getByEmail(request.getEmail());
+
             String token = jwtUtil.generateToken(
                     user.getEmail(),
                     user.getRole().name()
@@ -91,16 +67,12 @@ public class AuthController {
                     token
             );
 
-            return ResponseEntity.ok(
-                    new ApiResponse<>(true, loginResponse)
-            );
+            return ResponseEntity.ok(new ApiResponse<>(true, loginResponse));
 
         } catch (BadCredentialsException e) {
 
-            return ResponseEntity.status(401).body(
-                    new ApiResponse<>(false, "Incorrect password")
-            );
+            return ResponseEntity.status(401)
+                    .body(new ApiResponse<>(false, "Incorrect email or password"));
         }
     }
-
 }

@@ -1,5 +1,6 @@
 package com.escrowpj.escrow.dto;
 
+import com.escrowpj.escrow.entity.Role;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -9,4 +10,5 @@ public class RegisterRequest {
     private String name;
     private String email;
     private String password;
+    private Role role;
 }
