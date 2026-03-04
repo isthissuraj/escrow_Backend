@@ -5,6 +5,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.List;
+
 @Entity
 @Table(name = "users")
 @Getter
@@ -25,7 +27,11 @@ public class User {
     @JsonIgnore
     private String password;
 
+    @Column(nullable = false)
+    private Double rating = 0.0;
 
+    @Column(nullable = false)
+    private Integer totalReviews = 0;
 
     // CLIENT, FREELANCER, ADMIN
     @Enumerated(EnumType.STRING)

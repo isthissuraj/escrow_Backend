@@ -36,4 +36,7 @@ public class Project {
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL)
     private List<ProjectPhase> milestones;
+
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL)
+    private List<ProjectApplication> applications;
 }
