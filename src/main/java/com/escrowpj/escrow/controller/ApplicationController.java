@@ -35,10 +35,11 @@ public class ApplicationController {
     }
 
     @GetMapping("/proposal/{projectId}")
-    public ResponseEntity<?> getProposals(@PathVariable Long projectId){
+    public ResponseEntity<ApiResponse<?>> getProposals(@PathVariable Long projectId){
 
         return ResponseEntity.ok(
-                applicationService.getProposals(projectId)
+                new ApiResponse<>(true,
+                        applicationService.getProposals(projectId))
         );
     }
 

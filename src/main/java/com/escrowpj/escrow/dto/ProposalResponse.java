@@ -4,8 +4,8 @@ import lombok.*;
 
 @Getter
 @Setter
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 public class ProposalResponse {
 
     private Long id;
