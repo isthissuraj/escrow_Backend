@@ -17,7 +17,7 @@ public class ApplicationController {
     private final ApplicationService applicationService;
 
     @PostMapping("/apply/{projectId}")
-    public ResponseEntity<?> applyProject(
+    public ResponseEntity<ApiResponse<?>> applyProject(
             @PathVariable Long projectId,
             @RequestBody Map<String,String> body,
             Principal principal
@@ -29,7 +29,9 @@ public class ApplicationController {
                 body.get("description")
         );
 
-        return ResponseEntity.ok("Applied successfully");
+        return ResponseEntity.ok(
+                new ApiResponse<>(true, "Applied successfully")
+        );
     }
 
     @GetMapping("/proposal/{projectId}")
@@ -41,10 +43,12 @@ public class ApplicationController {
     }
 
     @PostMapping("/proposal/{id}/accept")
-    public ResponseEntity<?> acceptProposal(@PathVariable Long id){
+    public ResponseEntity<ApiResponse<?>> acceptProposal(@PathVariable Long id){
 
         applicationService.assignFreelancer(id);
 
-        return ResponseEntity.ok("Freelancer assigned");
+        return ResponseEntity.ok(
+                new ApiResponse<>(true, "Freelancer assigned")
+        );
     }
 }
