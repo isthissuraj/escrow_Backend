@@ -2,7 +2,7 @@ package com.escrowpj.escrow.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -37,6 +37,7 @@ public class Project {
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL)
     private List<ProjectPhase> milestones;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL)
     private List<ProjectApplication> applications;
 }
